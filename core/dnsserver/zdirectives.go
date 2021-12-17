@@ -47,6 +47,7 @@ var Directives = []string{
 	"azure",
 	"clouddns",
 	"k8s_external",
+	"kubenodes",
 	"kubernetes",
 	"file",
 	"auto",

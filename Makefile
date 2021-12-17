@@ -8,6 +8,10 @@ GOPATH?=$(HOME)/go
 MAKEPWD:=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 CGO_ENABLED?=0
 
+IMAGE_NAME ?= ghcr.io/infonova/coredns
+TEST_IMAGE = ${IMAGE_NAME}:${GITCOMMIT}
+RELEASE_IMAGE = ${IMAGE_NAME}:$(subst refs/tags/,,${GITHUB_REF})
+
 .PHONY: all
 all: coredns
 
@@ -35,3 +39,27 @@ pb:
 clean:
 	go clean
 	rm -f coredns
+
+.PHONY: build-image
+build-image: SYSTEM := GOOS=linux
+build-image: coredns
+	docker build -t ${TEST_IMAGE} .
+
+.PHONY: push-image
+push-image:
+	docker push ${TEST_IMAGE}
+
+.PHONY: pull-image
+pull-image:
+	while true; do \
+		docker pull ${TEST_IMAGE} || continue; \
+		break; \
+	done
+
+.PHONY: promote-image
+promote-image:
+ifndef GITHUB_REF
+	$(error GITHUB_REF is not set)
+endif
+	docker tag ${TEST_IMAGE} ${RELEASE_IMAGE}
+	docker push ${RELEASE_IMAGE}
