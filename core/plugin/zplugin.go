@@ -54,5 +54,5 @@ import (
 	_ "github.com/coredns/coredns/plugin/transfer"
 	_ "github.com/coredns/coredns/plugin/whoami"
 	// 3rd party plugins
-	_ "github.com/chrisohaver/kubenodes"
+	_ "github.com/infobloxopen/kubenodes"
 )
