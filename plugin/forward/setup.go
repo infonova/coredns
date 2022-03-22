@@ -94,6 +94,9 @@ func parseStanza(c *caddy.Controller) (*Forward, error) {
 	}
 	origFrom := f.from
 	zones := plugin.Host(f.from).NormalizeExact()
+	if len(zones) == 0 {
+		return f, fmt.Errorf("unable to normalize '%s'", f.from)
+	}
 	f.from = zones[0] // there can only be one here, won't work with non-octet reverse
 
 	if len(zones) > 1 {
@@ -144,6 +147,10 @@ func parseStanza(c *caddy.Controller) (*Forward, error) {
 		}
 		f.proxies[i].SetExpire(f.expire)
 		f.proxies[i].health.SetRecursionDesired(f.opts.hcRecursionDesired)
+		// when TLS is used, checks are set to tcp-tls
+		if f.opts.forceTCP && transports[i] != transport.TLS {
+			f.proxies[i].health.SetTCPTransport()
+		}
 	}
 
 	return f, nil
@@ -163,12 +170,9 @@ func parseBlock(c *caddy.Controller, f *Forward) error {
 		if !c.NextArg() {
 			return c.ArgErr()
 		}
-		n, err := strconv.Atoi(c.Val())
+		n, err := strconv.ParseUint(c.Val(), 10, 32)
 		if err != nil {
 			return err
-		}
-		if n < 0 {
-			return fmt.Errorf("max_fails can't be negative: %d", n)
 		}
 		f.maxfails = uint32(n)
 	case "health_check":
